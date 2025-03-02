@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cotizador de Proyectos de Automatización con IA</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f9fafb;
+    }
+    
+    .progress-bar {
+      transition: width 0.5s ease-in-out;
+    }
+    
+    input[type="range"] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 6px;
+      background: #e5e7eb;
+      border-radius: 5px;
+      outline: none;
+    }
+    
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 22px;
+      height: 22px;
+      background: #4f46e5;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid white;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    
+    .card {
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+    }
+    
+    .option-card {
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .option-card:hover {
+      border-color: #6366f1;
+    }
+    
+    .option-card.selected {
+      border-color: #4f46e5;
+      background-color: #eff6ff;
+    }
+    
+    .custom-radio input[type="radio"] {
+      position: absolute;
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    
+    .checkmark {
+      display: inline-block;
+      position: relative;
+      width: 20px;
+      height: 20px;
+      border: 2px solid #d1d5db;
+      border-radius: 50%;
+      margin-right: 0.5rem;
+      transition: all 0.2s ease;
+    }
+    
+    .custom-radio input[type="radio"]:checked + .label-content .checkmark {
+      border-color: #4f46e5;
+    }
+    
+    .custom-radio input[type="radio"]:checked + .label-content .checkmark::after {
+      content: "";
+      position: absolute;
+      top: 4px;
+      left: 4px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #4f46e5;
+    }
+    
+    .tooltip {
+      visibility: hidden;
+      position: absolute;
+      bottom: 125%;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    
+    .tooltip-container:hover .tooltip {
+      visibility: visible;
+      opacity: 1;
+    }
+    
+    .btn {
+      transition: all 0.2s ease;
+    }
+    
+    .btn:hover {
+      transform: translateY(-1px);
+    }
+    
+    .btn:active {
+      transform: translateY(1px);
+    }
+    
+    /* Custom select styling */
+    select {
+      appearance: none;
+      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right 1rem center;
+      background-size: 1em;
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+  <div class="container mx-auto px-4 py-12 max-w-5xl">
+    <header class="mb-10 text-center">
+      <h1 class="text-4xl font-bold text-gray-900 mb-3">Cotizador de IA</h1>
+      <p class="text-lg text-gray-600 max-w-2xl mx-auto">Personaliza las opciones para obtener un precio estimado de tu proyecto de automatización inteligente</p>
+    </header>
+
+    <div class="flex flex-col lg:flex-row gap-8">
+      <!-- Main Content -->
+      <div class="flex-grow">
+        <div class="bg-white shadow-sm rounded-2xl overflow-hidden border border-gray-100">
+          <!-- Progress indicator -->
+          <div class="p-6 border-b border-gray-100">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-sm font-medium text-gray-700">Presupuesto estimado</span>
+              <span id="price-indicator" class="text-lg font-semibold text-indigo-700">$0</span>
+            </div>
+            <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
+              <div id="price-progress" class="progress-bar h-full bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full" style="width: 0%"></div>
+            </div>
+          </div>
+
+          <form id="quote-form" class="p-6 space-y-8">
+            <!-- Nivel de Automatización -->
+            <section>
+              <h2 class="text-lg font-semibold text-gray-800 mb-4">Nivel de Automatización</h2>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <label class="custom-radio option-card border rounded-xl p-4 selected" for="automation-basic">
+                  <input type="radio" id="automation-basic" name="automation-level" value="basic" checked>
+                  <div class="label-content flex items-center">
+                    <span class="checkmark"></span>
+                    <div>
+                      <div class="font-medium">Básica</div>
+                      <div class="text-sm text-gray-500">
+                        Automatización simple de tareas repetitivas
+                        <div class="text-indigo-600 font-medium">$500 - $1,000</div>
+                      </div>
+                    </div>
+                  </div>
+                </label>
+                <label class="custom-radio option-card border rounded-xl p-4" for="automation-advanced">
+                  <input type="radio" id="automation-advanced" name="automation-level" value="advanced">
+                  <div class="label-content flex items-center">
+                    <span class="checkmark"></span>
+                    <div>
+                      <div class="font-medium">Avanzada</div>
+                      <div class="text-sm text-gray-500">
+                        Automatización compleja con decisiones inteligentes
+                        <div class="text-indigo-600 font-medium">$1,500 - $4,000</div>
+                      </div>
+                    </div>
+                  </div>
+                </label>
+              </div>
+            </section>
+
+            <!-- Número de Flujos -->
+            <section>
+              <h2 class="text-lg font-semibold text-gray-800 mb-4">Número de Flujos de Automatización</h2>
+              <div class="space-y-4">
+                <div class="flex items-center justify-between mb-1">
+                  <span class="text-sm text-gray-600">Flujos</span>
+                  <span id="flow-value" class="text-lg font-semibold text-indigo-700 bg-indigo-50 px-3 py-1 rounded-lg">1</span>
+                </div>
+                <input type="range" id="automation-flows" min="1" max="10" value="1" class="w-full">
+                <div class="text-sm text-gray-600 flex justify-between">
+                  <span>1 flujo</span>
+                  <span id="flow-cost-description" class="text-indigo-600">1-2 flujos (Sin costo adicional)</span>
+                  <span>10+ flujos</span>
+                </div>
+              </div>
+            </section>
+
+            <!-- Uso de IA -->
+            <section>
+              <h2 class="text-lg font-semibold text-gray-800 mb-4">Uso de Inteligencia Artificial</h2>
+              <div class="space-y-3">
+                <label class="custom-radio option-card border rounded-xl p-4 flex items-center selected" for="ai-none">
+                  <input type="radio" id="ai-none" name="ai-usage" value="none" checked>
+                  <div class="label-content flex items-center w-full">
+                    <span class="checkmark"></span>
+                    <div class="flex-grow">
+                      <div class="font-medium">Sin Agente IA</div>
+                      <div class="text-sm text-gray-500">Automatización estándar sin componentes de IA</div>
+                    </div>
+                    <span class="text-sm text-gray-500">Sin costo adicional</span>
+                  </div>
+                </label>
+                <label class="custom-radio option-card border rounded-xl p-4 flex items-center" for="ai-single">
+                  <input type="radio" id="ai-single" name="ai-usage" value="single">
+                  <div class="label-content flex items-center w-full">
+                    <span class="checkmark"></span>
+                    <div class="flex-grow">
+                      <div class="font-medium">Agente de IA</div>
+                      <div class="text-sm text-gray-500">Un agente inteligente para automatizar decisiones</div>
+                    </div>
+                    <span class="text-sm text-indigo-600 font-medium">$500 - $1,500</span>
+                  </div>
+                </label>
+                <label class="custom-radio option-card border rounded-xl p-4 flex items-center" for="ai-multi">
+                  <input type="radio" id="ai-multi" name="ai-usage" value="multi">
+                  <div class="label-content flex items-center w-full">
+                    <span class="checkmark"></span>
+                    <div class="flex-grow">
+                      <div class="font-medium">Multiagente de IA</div>
+                      <div class="text-sm text-gray-500">Múltiples agentes inteligentes cooperando</div>
+                    </div>
+                    <span class="text-sm text-indigo-600 font-medium">$2,000+</span>
+                  </div>
+                </label>
+              </div>
+            </section>
+
+            <!-- Complejidad de Integración -->
+            <section>
+              <h2 class="text-lg font-semibold text-gray-800 mb-4">Complejidad de Integración</h2>
+              <div class="relative">
+                <select id="integration-complexity" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-700 bg-white">
+                  <option value="simple">1-2 sistemas ($500 - $1,000)</option>
+                  <option value="complex">Múltiples sistemas complejos ($1,500 - $3,000)</option>
+                </select>
+              </div>
+            </section>
+
+            <!-- Soporte y Mantenimiento -->
+            <section>
+              <h2 class="text-lg font-semibold text-gray-800 mb-4">Soporte y Mantenimiento Mensual</h2>
+              <div class="space-y-3">
+                <label class="custom-radio option-card border rounded-xl p-4 flex items-center selected" for="support-none">
+                  <input type="radio" id="support-none" name="support-level" value="none" checked>
+                  <div class="label-content flex items-center w-full">
+                    <span class="checkmark"></span>
+                    <div class="flex-grow">
+                      <div class="font-medium">Sin soporte</div>
+                      <div class="text-sm text-gray-500">Sin servicio de mantenimiento</div>
+                    </div>
+                    <span class="text-sm text-gray-500">Sin costo adicional</span>
+                  </div>
+                </label>
+                <label class="custom-radio option-card border rounded-xl p-4 flex items-center" for="support-basic">
+                  <input type="radio" id="support-basic" name="support-level" value="basic">
+                  <div class="label-content flex items-center w-full">
+                    <span class="checkmark"></span>
+                    <div class="flex-grow">
+                      <div class="font-medium">Soporte básico</div>
+                      <div class="text-sm text-gray-500">Soporte técnico 8/5 y mantenimiento básico</div>
+                    </div>
+                    <span class="text-sm text-indigo-600 font-medium">$300 - $800/mes</span>
+                  </div>
+                </label>
+                <label class="custom-radio option-card border rounded-xl p-4 flex items-center" for="support-advanced">
+                  <input type="radio" id="support-advanced" name="support-level" value="advanced">
+                  <div class="label-content flex items-center w-full">
+                    <span class="checkmark"></span>
+                    <div class="flex-grow">
+                      <div class="font-medium">Soporte avanzado</div>
+                      <div class="text-sm text-gray-500">Soporte técnico 24/7 y mantenimiento premium</div>
+                    </div>
+                    <span class="text-sm text-indigo-600 font-medium">$1,000+/mes</span>
+                  </div>
+                </label>
+              </div>
+            </section>
+          </form>
+        </div>
+      </div>
+
+      <!-- Summary Sidebar -->
+      <div class="lg:w-96">
+        <div class="bg-white shadow-sm rounded-2xl overflow-hidden border border-gray-100 sticky top-8">
+          <div class="p-6 border-b border-gray-100 bg-gray-50">
+            <h2 class="text-lg font-semibold text-gray-800">Resumen de la Cotización</h2>
+          </div>
+          
+          <div class="p-6 space-y-4">
+            <div class="space-y-3">
+              <div class="flex justify-between items-center">
+                <span class="text-gray-600">Nivel de Automatización</span>
+                <span id="summary-automation" class="font-medium text-gray-800">Básica</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-gray-600">Flujos de Automatización</span>
+                <span id="summary-flows" class="font-medium text-gray-800">1</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-gray-600">Uso de IA</span>
+                <span id="summary-ai" class="font-medium text-gray-800">Sin Agente IA</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-gray-600">Complejidad de Integración</span>
+                <span id="summary-integration" class="font-medium text-gray-800">1-2 sistemas</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-gray-600">Soporte y Mantenimiento</span>
+                <span id="summary-support" class="font-medium text-gray-800">Sin soporte</span>
+              </div>
+            </div>
+            
+            <hr class="border-gray-200">
+            
+            <div class="space-y-2">
+              <div class="flex justify-between items-center">
+                <span class="text-lg font-semibold text-gray-800">Precio Total</span>
+                <div class="text-right">
+                  <div id="total-price" class="text-2xl font-bold text-indigo-700">$750</div>
+                  <div id="monthly-cost" class="text-sm text-gray-500 hidden">+ $0/mes</div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="space-y-3 pt-4">
+              <button id="btn-pdf" class="btn w-full bg-white border border-gray-300 text-gray-700 px-4 py-3 rounded-xl hover:bg-gray-50 transition-colors flex items-center justify-center font-medium">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Exportar PDF
+              </button>
+              <button id="btn-email" class="btn w-full bg-indigo-600 text-white px-4 py-3 rounded-xl hover:bg-indigo-700 transition-colors flex items-center justify-center font-medium">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                Enviar por Email
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Email Modal -->
+    <div id="email-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+      <div class="bg-white rounded-2xl shadow-xl p-6 max-w-md w-full mx-4 transform transition-all">
+        <h3 class="text-xl font-semibold text-gray-800 mb-4">Enviar Cotización por Email</h3>
+        <form id="email-form" class="space-y-4">
+          <div>
+            <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Correo Electrónico</label>
+            <input type="email" id="email" name="email" required class="w-full px-4 py-2 border border-gray-300 rounded-xl shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+          </div>
+          <div>
+            <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+            <input type="text" id="name" name="name" required class="w-full px-4 py-2 border border-gray-300 rounded-xl shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+          </div>
+          <div class="flex justify-end space-x-3 pt-2">
+            <button type="button" id="cancel-email" class="btn px-4 py-2 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50">
+              Cancelar
+            </button>
+            <button type="submit" class="btn px-4 py-2 bg-indigo-600 border border-transparent rounded-xl text-white hover:bg-indigo-700">
+              Enviar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Constants for pricing
+      const PRICES = {
+        automation: {
+          basic: { min: 500, max: 1000, value: 750 },
+          advanced: { min: 1500, max: 4000, value: 2750 }
+        },
+        flows: {
+          tier1: { min: 0, max: 0, value: 0 },       // 1-2 flows
+          tier2: { min: 500, max: 1000, value: 750 }, // 3-5 flows
+          tier3: { min: 1500, max: 3000, value: 2250 } // 6+ flows
+        },
+        ai: {
+          none: { min: 0, max: 0, value: 0 },
+          single: { min: 500, max: 1500, value: 1000 },
+          multi: { min: 2000, max: 4000, value: 3000 }
+        },
+        integration: {
+          simple: { min: 500, max: 1000, value: 750 },
+          complex: { min: 1500, max: 3000, value: 2250 }
+        },
+        support: {
+          none: { min: 0, max: 0, value: 0 },
+          basic: { min: 300, max: 800, value: 550 },
+          advanced: { min: 1000, max: 2000, value: 1500 }
+        }
+      };
+      
+      const MAX_PRICE = 15000; // Used for progress bar calculation
+      
+      // DOM Elements
+      const form = document.getElementById('quote-form');
+      const flowSlider = document.getElementById('automation-flows');
+      const flowValue = document.getElementById('flow-value');
+      const flowCostDescription = document.getElementById('flow-cost-description');
+      const totalPrice = document.getElementById('total-price');
+      const monthlyCost = document.getElementById('monthly-cost');
+      const priceProgress = document.getElementById('price-progress');
+      const priceIndicator = document.getElementById('price-indicator');
+      
+      // Summary elements
+      const summaryAutomation = document.getElementById('summary-automation');
+      const summaryFlows = document.getElementById('summary-flows');
+      const summaryAI = document.getElementById('summary-ai');
+      const summaryIntegration = document.getElementById('summary-integration');
+      const summarySupport = document.getElementById('summary-support');
+      
+      // Email modal elements
+      const btnEmail = document.getElementById('btn-email');
+      const emailModal = document.getElementById('email-modal');
+      const cancelEmail = document.getElementById('cancel-email');
+      const emailForm = document.getElementById('email-form');
+      
+      // PDF button
+      const btnPDF = document.getElementById('btn-pdf');
+      
+      // Custom radio styling
+      const radioCards = document.querySelectorAll('.option-card');
+      radioCards.forEach(card => {
+        const radio = card.querySelector('input[type="radio"]');
+        radio.addEventListener('change', function() {
+          // Remove 'selected' class from all cards in the same group
+          const name = this.getAttribute('name');
+          document.querySelectorAll(`input[name="${name}"]`).forEach(input => {
+            input.closest('.option-card').classList.remove('selected');
+          });
+          
+          // Add 'selected' class to the clicked card
+          if (this.checked) {
+            card.classList.add('selected');
+          }
+        });
+      });
+      
+      // Calculate and update price
+      function updatePrice() {
+        // Get selected values
+        const automationLevel = document.querySelector('input[name="automation-level"]:checked').value;
+        const flowsValue = parseInt(flowSlider.value);
+        const aiUsage = document.querySelector('input[name="ai-usage"]:checked').value;
+        const integrationComplexity = document.getElementById('integration-complexity').value;
+        const supportLevel = document.querySelector('input[name="support-level"]:checked').value;
+        
+        // Determine flow tier
+        let flowTier;
+        if (flowsValue <= 2) {
+          flowTier = 'tier1';
+          flowCostDescription.textContent = '1-2 flujos (Sin costo adicional)';
+        } else if (flowsValue <= 5) {
+          flowTier = 'tier2';
+          flowCostDescription.textContent = '3-5 flujos ($500 - $1,000)';
+        } else {
+          flowTier = 'tier3';
+          flowCostDescription.textContent = '6+ flujos ($1,500+)';
+        }
+        
+        // Calculate one-time cost
+        const oneTimeCost = 
+          PRICES.automation[automationLevel].value +
+          PRICES.flows[flowTier].value +
+          PRICES.ai[aiUsage].value +
+          PRICES.integration[integrationComplexity].value;
+        
+        // Monthly cost
+        const monthlyFee = PRICES.support[supportLevel].value;
+        
+        // Update UI
+        totalPrice.textContent = `$${oneTimeCost.toLocaleString()}`;
+        
+        if (monthlyFee > 0) {
+          monthlyCost.textContent = `+ $${monthlyFee.toLocaleString()}/mes`;
+          monthlyCost.classList.remove('hidden');
+        } else {
+          monthlyCost.classList.add('hidden');
+        }
+        
+        // Update progress bar
+        const progressPercentage = Math.min(100, (oneTimeCost / MAX_PRICE) * 100);
+        priceProgress.style.width = `${progressPercentage}%`;
+        priceIndicator.textContent = `$${oneTimeCost.toLocaleString()}`;
+        
+        // Update summary
+        summaryAutomation.textContent = automationLevel === 'basic' ? 'Básica' : 'Avanzada';
+        summaryFlows.textContent = flowsValue;
+        
+        switch (aiUsage) {
+          case 'none': summaryAI.textContent = 'Sin Agente IA'; break;
+          case 'single': summaryAI.textContent = 'Agente de IA'; break;
+          case 'multi': summaryAI.textContent = 'Multiagente de IA'; break;
+        }
+        
+        summaryIntegration.textContent = integrationComplexity === 'simple' ? '1-2 sistemas' : 'Múltiples sistemas complejos';
+        
+        switch (supportLevel) {
+          case 'none': summarySupport.textContent = 'Sin soporte'; break;
+          case 'basic': summarySupport.textContent = 'Soporte básico'; break;
+          case 'advanced': summarySupport.textContent = 'Soporte avanzado'; break;
+        }
+      }
+      
+      // Event listeners
+      form.addEventListener('change', updatePrice);
+      
+      flowSlider.addEventListener('input', function() {
+        flowValue.textContent = this.value;
+        updatePrice();
+      });
+      
+      // Email functionality
+      btnEmail.addEventListener('click', function() {
+        emailModal.classList.remove('hidden');
+      });
+      
+      cancelEmail.addEventListener('click', function() {
+        emailModal.classList.add('hidden');
+      });
+      
+      emailForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const email = document.getElementById('email').value;
+        const name = document.getElementById('name').value;
+        
+        // Simulate sending email
+        alert(`Cotización enviada a ${name} (${email})`);
+        emailModal.classList.add('hidden');
+        emailForm.reset();
+      });
+      
+      // PDF functionality
+      btnPDF.addEventListener('click', function() {
+        // Simulate PDF generation
+        alert('Generando PDF de la cotización...');
+        // In a real implementation, you would use a library like jsPDF
+      });
+      
+      // Close modal when clicking outside
+      window.addEventListener('click', function(e) {
+        if (e.target === emailModal) {
+          emailModal.classList.add('hidden');
+        }
+      });
+      
+      // Initialize calculation
+      updatePrice();
+    });
+  </script>
+</body>
+</html>
