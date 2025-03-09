@@ -135,11 +135,13 @@
     }
   </style>
 </head>
+
 <body class="min-h-screen">
   <aside class="bg-gray-100 p-2">
     <div class="flex justify-end">
       <a href="https://github.com/ibernabel/cotizador_automatizacion_ia" target="_blank">
-        <img src="https://img.shields.io/github/stars/ibernabel/cotizador_automatizacion_ia?style=social" alt="GitHub stars">
+        <img src="https://img.shields.io/github/stars/ibernabel/cotizador_automatizacion_ia?style=social"
+          alt="GitHub stars">
       </a>
       <a href="https://x.com/idequelbernabel" target="_blank">
         <img src="https://img.shields.io/twitter/follow/idequelbernabel?style=social" alt="X Follow">
@@ -171,6 +173,24 @@
           </div>
 
           <form id="quote-form" class="p-6 space-y-8">
+            <!-- Precio Base -->
+            <section>
+              <h2 class="text-lg font-semibold text-gray-800 mb-4">Precio Base</h2>
+              <div class="space-y-4">
+                <div class="flex items-center justify-between mb-1">
+                  <span class="text-sm text-gray-600">Mínimo</span>
+                  <span id="base-price-value"
+                    class="text-lg font-semibold text-indigo-700 bg-indigo-50 px-3 py-1 rounded-lg">$750</span>
+                </div>
+                <input type="range" id="base-price" min="100" max="1500" value="750" step="25" class="w-full">
+                <div class="text-sm text-gray-600 flex justify-between">
+                  <span>$100</span>
+                  <span id="base-price-description" class="text-indigo-600">Ajusta el precio base según necesidad</span>
+                  <span>$1,500</span>
+                </div>
+              </div>
+            </section>
+
             <!-- Nivel de Automatización -->
             <section>
               <h2 class="text-lg font-semibold text-gray-800 mb-4">Nivel de Automatización</h2>
@@ -422,34 +442,36 @@
       // Constants for pricing
       const PRICES = {
         automation: {
-          basic: { min: 500, max: 1000, value: 750 },
-          advanced: { min: 1500, max: 4000, value: 2750 }
+          basic: { min: 500, max: 1000, value: 750, multiplier: 1 },
+          advanced: { min: 1500, max: 3000, value: 2250, multiplier: 3 } // Added multiplier for advanced}
         },
         flows: {
-          tier1: { min: 0, max: 0, value: 0 },       // 1-2 flows
-          tier2: { min: 500, max: 1000, value: 750 }, // 3-5 flows
-          tier3: { min: 1500, max: 3000, value: 2250 } // 6+ flows
+          tier1: { min: 0, max: 0, value: 0, multiplier: 0 },       // 1-2 flows
+          tier2: { min: 500, max: 1000, value: 750, multiplier: 1 }, // 3-5 flows
+          tier3: { min: 1500, max: 3000, value: 2250, multiplier: 3 } // 6+ flows
         },
         ai: {
-          none: { min: 0, max: 0, value: 0 },
-          single: { min: 500, max: 1500, value: 1000 },
-          multi: { min: 2000, max: 4000, value: 3000 }
+          none: { min: 0, max: 0, value: 0, multiplier: 0 }, // Added multiplier for none
+          single: { min: 500, max: 1000, value: 750, multiplier: 1 }, // Added multiplier for single
+          multi: { min: 2000, max: 4000, value: 3000, multiplier: 4 } // Added multiplier for multi
         },
         integration: {
-          simple: { min: 500, max: 1000, value: 750 },
-          complex: { min: 1500, max: 3000, value: 2250 }
+          simple: { min: 500, max: 1000, value: 750, multiplier: 1 }, // Added multiplier for simple
+          complex: { min: 1500, max: 3000, value: 2250, multiplier: 3 } // Added multiplier for complex
         },
         support: {
-          none: { min: 0, max: 0, value: 0 },
-          basic: { min: 300, max: 800, value: 550 },
-          advanced: { min: 1000, max: 2000, value: 1500 }
+          none: { min: 0, max: 0, value: 0}, 
+          basic: { min: 100, max: 500, value: 300}, 
+          advanced: { min: 500, max: 2500, value: 1500 } 
         }
       };
 
-      const MAX_PRICE = 15000; // Used for progress bar calculation
+      const MAX_PRICE = 19500; // Used for progress bar calculation
 
       // DOM Elements
       const form = document.getElementById('quote-form');
+      const basePriceSlider = document.getElementById('base-price');
+      const basePriceValue = document.getElementById('base-price-value');
       const flowSlider = document.getElementById('automation-flows');
       const flowValue = document.getElementById('flow-value');
       const flowCostDescription = document.getElementById('flow-cost-description');
@@ -496,6 +518,7 @@
       function updatePrice() {
         // Get selected values
         const automationLevel = document.querySelector('input[name="automation-level"]:checked').value;
+        const basePriceValue = parseInt(basePriceSlider.value); // Updated to use basePriceSlider
         const flowsValue = parseInt(flowSlider.value);
         const aiUsage = document.querySelector('input[name="ai-usage"]:checked').value;
         const integrationComplexity = document.getElementById('integration-complexity').value;
@@ -513,13 +536,17 @@
           flowTier = 'tier3';
           flowCostDescription.textContent = '6+ flujos ($1,500+)';
         }
+        const automationFactor = PRICES.automation[automationLevel].value === 0 ? 1 : (basePriceValue / PRICES.automation[automationLevel].value) * PRICES.automation[automationLevel].multiplier;
+        const flowFactor = PRICES.flows[flowTier].value === 0 ? 1 : (basePriceValue / PRICES.flows[flowTier].value) * PRICES.flows[flowTier].multiplier;
+        const aiFactor = PRICES.ai[aiUsage].value === 0 ? 1 : (basePriceValue / PRICES.ai[aiUsage].value) * PRICES.ai[aiUsage].multiplier;
+        const integrationFactor = PRICES.integration[integrationComplexity].value === 0 ? 1 : (basePriceValue / PRICES.integration[integrationComplexity].value) * PRICES.integration[integrationComplexity].multiplier;
 
         // Calculate one-time cost
         const oneTimeCost =
-          PRICES.automation[automationLevel].value +
-          PRICES.flows[flowTier].value +
-          PRICES.ai[aiUsage].value +
-          PRICES.integration[integrationComplexity].value;
+          (PRICES.automation[automationLevel].value * automationFactor) +
+          (PRICES.flows[flowTier].value * flowFactor) +
+          (PRICES.ai[aiUsage].value * aiFactor) + // Updated to include aiFactor)+
+          (PRICES.integration[integrationComplexity].value * integrationFactor); // Updated to include integrationFactor
 
         // Monthly cost
         const monthlyFee = PRICES.support[supportLevel].value;
@@ -560,6 +587,11 @@
 
       // Event listeners
       form.addEventListener('change', updatePrice);
+
+      basePriceSlider.addEventListener('input', function () {
+        basePriceValue.textContent = '$' + this.value; // Update base price display
+        updatePrice();
+      });
 
       flowSlider.addEventListener('input', function () {
         flowValue.textContent = this.value;
